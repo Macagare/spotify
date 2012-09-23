@@ -42,7 +42,7 @@ component output="false" displayname=""  {
 	* 
 	* @param query struct with search parameters
 	*/
-	public any function buildQuery(string option = "", required struct query, boolean lookup = false ) {
+	public struct function buildQuery(string option = "", required struct query, boolean lookup = false ) {
 		var targetUrl  = IIf( not arguments.lookup, DE("#BASE_URL_SEARCH##arguments.option#"), DE("#BASE_URL_LOOKUP##arguments.option#") );
 		var queryLoop  = 0;
 		var connect    = "";
@@ -66,7 +66,7 @@ component output="false" displayname=""  {
 		return result;
 	}
 
-	public any function lookupArtistAlbums( boolean details = false ) {
+	public struct function lookupArtistAlbums( boolean details = false ) {
 		if( details ){
 			return this.buildQuery( "", { "uri":"spotify:artist:4YrKBkKSVeqDamzBPWVnSJ", "extras" : "albumdetail" }, true );
 		}else{
@@ -74,7 +74,7 @@ component output="false" displayname=""  {
 		}
 	}
 
-	public any function lookupAlbumTracks( boolean details = false ) {
+	public struct function lookupAlbumTracks( boolean details = false ) {
 		if( details ){
 			return this.buildQuery( "", { "uri":"spotify:album:6G9fHYDCoyEErUkHrFYfs4", "extras" : "albumdetail" }, true );
 		}else{
@@ -82,7 +82,7 @@ component output="false" displayname=""  {
 		}
 	}
 
-	public any function lookupTrack() {
+	public struct function lookupTrack() {
 		return this.buildQuery( "", { "uri":"spotify:track:6NmXV4o6bmp704aPGyTVVG" }, true );
 	}
 
@@ -91,28 +91,28 @@ component output="false" displayname=""  {
 	* 
 	* info source: http://pansentient.com/2010/01/whats-new-on-spotify-resolved-kinda/
 	*/
-	public any function getNewAlbums() {
+	public struct function getNewAlbums() {
 		return this.searchTag("new");
 	}
 
-	private any function searchTag(string tag) {
+	private struct function searchTag(string tag) {
 		return this.buildQuery( OPTION_ALBUM, { "q":"tag:#arguments.tag#" } );
 	}
 	
-	public any function getAlbumsByYear(numeric  year) {
+	public struct function getAlbumsByYear(numeric  year) {
 		return this.buildQuery( OPTION_ALBUM, { "q":"year:#arguments.year#" } );
 	}
 
-	public any function getAlbumByName(string name) {
+	public struct function getAlbumByName(string name) {
 		return this.buildQuery( OPTION_ALBUM, { "q":"album:#arguments.name#" } );
 	}
 	
-	public any function getTrackByName(string trackName) {
+	public struct function getTrackByName(string trackName) {
 		arguments.trackName = replace("#arguments.trackName#", " ", "+", "ALL");
 		return this.buildQuery( OPTION_TRACK, { "q":arguments.trackName } );
 	}
 
-	public any function getArtistByName(string artistName) {
+	public struct function getArtistByName(string artistName) {
 		arguments.artistName = replace("#arguments.artistName#", " ", "+", "ALL");
 		return this.buildQuery( OPTION_ARTIST, { "q":arguments.artistName } );
 	}
@@ -121,14 +121,14 @@ component output="false" displayname=""  {
 	* full spotify genre list:
 	* https://spreadsheets.google.com/pub?key=psnjFY3R2itsqjinSs9hkZw
 	*/
-	public any function getAlbumsByGenre(string name) {
+	public struct function getAlbumsByGenre(string name) {
 		return this.buildQuery( OPTION_ALBUM, { "q":"genre:#arguments.name#" } );
 	}
 
 	/**
 	* Be able to search for labels like EMI, BMG or Universal
 	*/
-	public any function getAlbumsByLabel(string name) {
+	public struct function getAlbumsByLabel(string name) {
 		return this.buildQuery( OPTION_ALBUM, { "q":"label:#arguments.name#"} );
 	}
 
