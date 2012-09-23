@@ -9,61 +9,19 @@
 * 
 */
 
-component output="false" displayname=""  {
+component output="false" displayname="" extends="ApiBase"  {
 
-	property string BASE_URL_SEARCH; // simple search
-	property string BASE_URL_LOOKUP; // get detailed information by id
+	
 	property string OPTION_TRACK;
 	property string OPTION_ARTIST;
 
 	public function init(){
-		BASE_URL_SEARCH = " http://ws.spotify.com/search/1/";
-		BASE_URL_LOOKUP = " http://ws.spotify.com/lookup/1/";
+		SUPER.init();
+		
 		OPTION_TRACK    = "track";
 		OPTION_ARTIST   = "artist";
 		OPTION_ALBUM    = "album";
 		return this;
-	}
-
-	public string function test() {
-		return testConnection("http://www.spotify.com").status_code;
-	}
-
-	// do a testconnection to any url you want
-	public struct function testConnection(string targetUrl) {
-		http url="#arguments.targetUrl#" method="HEAD" result="testCall" timeout="10" {
-			httpparam type="Header" name="Accept" value="application/json";
-		};
-		return testCall;
-	}
-
-	/**
-	* Dynamically build search query
-	* 
-	* @param query struct with search parameters
-	*/
-	public struct function buildQuery(string option = "", required struct query, boolean lookup = false ) {
-		var targetUrl  = IIf( not arguments.lookup, DE("#BASE_URL_SEARCH##arguments.option#"), DE("#BASE_URL_LOOKUP##arguments.option#") );
-		var queryLoop  = 0;
-		var connect    = "";
-		var result     = "";
-
-		//"#BASE_URL_LOOKUP#?uri=spotify:artist:4YrKBkKSVeqDamzBPWVnSJ&extras=album"
-
-		for (filter in arguments.query) {
-			targetUrl = "#targetUrl##IIf( queryLoop gt 0, DE("&"), DE("?") )##filter#=#arguments.query[filter]#";
-			queryLoop++;
-		}
-
-		//return targetUrl; 
-		
-		http url="#targetUrl#" method="GET" result="httpResult" {
-			httpparam type="Header" name="Accept" value="application/json";
-		};
-		result               = deserializeJSON( httpResult.fileContent );
-		result["requestUrl"] = targetUrl;
-
-		return result;
 	}
 
 	public struct function lookupArtistAlbums( boolean details = false ) {

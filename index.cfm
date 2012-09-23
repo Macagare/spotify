@@ -1,6 +1,6 @@
 Spotify API
 
-<cfset spotify = createObject("component", "cfc.de.cmd.spotify.SpotifyWrapper").init() />
+<cfset spotify = createObject("component", "cfc.de.cmd.spotify.ApiWrapper").init() />
 <cfset connection = spotify.test() />
 <cfset results = "" />
 <cfif findNoCase("200", "#connection#") >
