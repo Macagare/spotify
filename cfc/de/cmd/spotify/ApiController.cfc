@@ -21,7 +21,12 @@ component output="false" displayname=""  {
 		BASE_URL_LOOKUP = " http://ws.spotify.com/lookup/1/";
 		OPTION_TRACK    = "track";
 		OPTION_ARTIST   = "artist";
+		OPTION_ALBUM    = "album";
 		return this;
+	}
+
+	public string function test() {
+		return testConnection("http://www.spotify.com").status_code;
 	}
 
 	// do a testconnection to any url you want
@@ -32,60 +37,53 @@ component output="false" displayname=""  {
 		return testCall;
 	}
 
+	/**
+	* Dynamically build search query
+	* 
+	* @param query struct with search parameters
+	*/
+	public any function buildQuery(string option = "", required struct query, boolean lookup = false ) {
+		var targetUrl  = IIf( not arguments.lookup, DE("#BASE_URL_SEARCH##arguments.option#"), DE("#BASE_URL_LOOKUP##arguments.option#") );
+		var queryLoop  = 0;
+		var connect    = "";
+		var result     = "";
 
-	public string function test() {
-		return testConnection("http://www.spotify.com").status_code;
-	}
-	
+		//"#BASE_URL_LOOKUP#?uri=spotify:artist:4YrKBkKSVeqDamzBPWVnSJ&extras=album"
 
-	public any function findTrack(string trackName) {
-		arguments.trackName = replace("#arguments.trackName#", " ", "+", "ALL");
-		http url="#BASE_URL_SEARCH##OPTION_TRACK#?q=#arguments.trackName#" method="GET" result="httpResult" {
+		for (filter in arguments.query) {
+			targetUrl = "#targetUrl##IIf( queryLoop gt 0, DE("&"), DE("?") )##filter#=#arguments.query[filter]#";
+			queryLoop++;
+		}
+
+		//return targetUrl; 
+		
+		http url="#targetUrl#" method="GET" result="httpResult" {
 			httpparam type="Header" name="Accept" value="application/json";
 		};
-		return deserializeJSON( httpResult.fileContent );
-	}
+		result               = deserializeJSON( httpResult.fileContent );
+		result["requestUrl"] = targetUrl;
 
-	public any function findArtist(string artistName) {
-		arguments.artistName = replace("#arguments.artistName#", " ", "+", "ALL");
-		http url="#BASE_URL_SEARCH##OPTION_ARTIST#?q=#arguments.artistName#" method="GET" result="httpResult" {
-			httpparam type="Header" name="Accept" value="application/json";
-		};
-		return deserializeJSON( httpResult.fileContent );
+		return result;
 	}
-
 
 	public any function lookupArtistAlbums( boolean details = false ) {
 		if( details ){
-			http url="#BASE_URL_LOOKUP#?uri=spotify:artist:4YrKBkKSVeqDamzBPWVnSJ&extras=albumdetail" method="GET" result="httpResult" {
-				httpparam type="Header" name="Accept" value="application/json";
-			};
+			return this.buildQuery( "", { "uri":"spotify:artist:4YrKBkKSVeqDamzBPWVnSJ", "extras" : "albumdetail" }, true );
 		}else{
-			http url="#BASE_URL_LOOKUP#?uri=spotify:artist:4YrKBkKSVeqDamzBPWVnSJ&extras=album" method="GET" result="httpResult" {
-				httpparam type="Header" name="Accept" value="application/json";
-			};
+			return this.buildQuery( "", { "uri":"spotify:artist:4YrKBkKSVeqDamzBPWVnSJ" }, true );
 		}
-		return deserializeJSON( httpResult.fileContent );
 	}
 
 	public any function lookupAlbumTracks( boolean details = false ) {
 		if( details ){
-			http url="#BASE_URL_LOOKUP#?uri=spotify:album:6G9fHYDCoyEErUkHrFYfs4&extras=trackdetail" method="GET" result="httpResult" {
-				httpparam type="Header" name="Accept" value="application/json";
-			};
+			return this.buildQuery( "", { "uri":"spotify:album:6G9fHYDCoyEErUkHrFYfs4", "extras" : "albumdetail" }, true );
 		}else{
-			http url="#BASE_URL_LOOKUP#?uri=spotify:album:6G9fHYDCoyEErUkHrFYfs4&extras=track" method="GET" result="httpResult" {
-				httpparam type="Header" name="Accept" value="application/json";
-			};
+			return this.buildQuery( "", { "uri":"spotify:album:6G9fHYDCoyEErUkHrFYfs4", "extras" : "track" }, true );
 		}
-		return deserializeJSON( httpResult.fileContent );
 	}
 
 	public any function lookupTrack() {
-		http url="#BASE_URL_LOOKUP#?uri=spotify:track:6NmXV4o6bmp704aPGyTVVG" method="GET" result="httpResult" {
-			httpparam type="Header" name="Accept" value="application/json";
-		};
-		return deserializeJSON( httpResult.fileContent );
+		return this.buildQuery( "", { "uri":"spotify:track:6NmXV4o6bmp704aPGyTVVG" }, true );
 	}
 
 	/**
@@ -94,10 +92,44 @@ component output="false" displayname=""  {
 	* info source: http://pansentient.com/2010/01/whats-new-on-spotify-resolved-kinda/
 	*/
 	public any function getNewAlbums() {
-		http url="#BASE_URL_SEARCH#album?q=tag:new" method="GET" result="httpResult" {
-			httpparam type="Header" name="Accept" value="application/json";
-		};
-		return deserializeJSON( httpResult.fileContent );
+		return this.searchTag("new");
+	}
+
+	private any function searchTag(string tag) {
+		return this.buildQuery( OPTION_ALBUM, { "q":"tag:#arguments.tag#" } );
+	}
+	
+	public any function getAlbumsByYear(numeric  year) {
+		return this.buildQuery( OPTION_ALBUM, { "q":"year:#arguments.year#" } );
+	}
+
+	public any function getAlbumByName(string name) {
+		return this.buildQuery( OPTION_ALBUM, { "q":"album:#arguments.name#" } );
+	}
+	
+	public any function getTrackByName(string trackName) {
+		arguments.trackName = replace("#arguments.trackName#", " ", "+", "ALL");
+		return this.buildQuery( OPTION_TRACK, { "q":arguments.trackName } );
+	}
+
+	public any function getArtistByName(string artistName) {
+		arguments.artistName = replace("#arguments.artistName#", " ", "+", "ALL");
+		return this.buildQuery( OPTION_ARTIST, { "q":arguments.artistName } );
+	}
+
+	/**
+	* full spotify genre list:
+	* https://spreadsheets.google.com/pub?key=psnjFY3R2itsqjinSs9hkZw
+	*/
+	public any function getAlbumsByGenre(string name) {
+		return this.buildQuery( OPTION_ALBUM, { "q":"genre:#arguments.name#" } );
+	}
+
+	/**
+	* Be able to search for labels like EMI, BMG or Universal
+	*/
+	public any function getAlbumsByLabel(string name) {
+		return this.buildQuery( OPTION_ALBUM, { "q":"label:#arguments.name#"} );
 	}
 
 }
