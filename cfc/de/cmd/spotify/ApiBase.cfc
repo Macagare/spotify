@@ -30,14 +30,16 @@ component output="false" displayname=""  {
         return testCall;
     }
 
+    /**
+    * @private
+    */
     private string function buildQueryString(string option = "", required struct query, boolean lookup = false) {
         var targetUrl  = IIf( not arguments.lookup, DE("#BASE_URL_SEARCH##arguments.option#"), DE("#BASE_URL_LOOKUP##arguments.option#") );
         var queryLoop  = 0;
         var connect    = "";
-        var result     = "";
 
         for (filter in arguments.query) {
-            targetUrl = "#targetUrl##IIf( queryLoop gt 0, DE("&"), DE("?") )##filter#=#arguments.query[filter]#";
+            targetUrl = "#targetUrl##IIf( queryLoop gt 0, DE("&"), DE("?") )##filter#=#URLEncodedFormat(arguments.query[filter])#";
             queryLoop++;
         }
 
@@ -49,7 +51,7 @@ component output="false" displayname=""  {
     * 
     * @param query struct with search parameters
     */
-    private struct function buildQuery(string option = "", required struct query, boolean lookup = false ) {
+    public struct function buildQuery(string option = "", required struct query, boolean lookup = false ) {
         var targetUrl = this.buildQueryString( arguments.option, arguments.query, arguments.lookup );
         http url="#targetUrl#" method="GET" result="httpResult" {
             httpparam type="Header" name="Accept" value="application/json";
